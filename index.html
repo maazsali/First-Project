@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ammar's DC Commute Adventure</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container" id="gameContainer">
+        <!-- Game Info Display -->
+        <div class="game-info">
+            <div>🌙 Moons: <span id="moons">0</span></div>
+            <div>☕ Coffee: <span id="coffee">0</span></div>
+            <div>💻 Laptops: <span id="laptops">0</span></div>
+        </div>
+        
+        <div class="lives-display">
+            <div>❤️ Lives: <span id="lives">0</span></div>
+        </div>
+        
+        <div class="timer-display">
+            <div>⏱️ Time: <span id="timer">0</span>s</div>
+        </div>
+
+        <!-- Start Screen -->
+        <div class="start-screen" id="startScreen">
+            <h1>🚴‍♂️ Ammar's DC Commute 🚴‍♂️</h1>
+            <p>Congratulations on your new job at Anthesis!<br>Help Ammar bike through DC to reach the office.</p>
+            <p>Collect 🌙 crescent moons, ☕ coffee, and 💻 laptops!<br>Find 👰 Jasmine for extra lives!</p>
+            <button onclick="startGame()">Start the Commute!</button>
+            <p class="instructions">Press SPACEBAR or CLICK to jump over obstacles</p>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div class="game-over-screen hidden" id="gameOverScreen">
+            <h1 id="endTitle">🎯 Mission Complete!</h1>
+            <div class="stats">
+                <div>🌙 Moons Collected: <span id="finalMoons">0</span></div>
+                <div>☕ Coffee: <span id="finalCoffee">0</span></div>
+                <div>💻 Laptops: <span id="finalLaptops">0</span></div>
+                <div>⏱️ Time Survived: <span id="finalTime">0</span>s</div>
+            </div>
+            <p id="endMessage">Great commute, Ammar!</p>
+            <button onclick="restartGame()">Ride Again</button>
+        </div>
+
+        <!-- Background Elements - Clouds -->
+        <div class="cloud" id="cloud1" style="top: 40px; left: 20%; width: 100px; height: 50px; animation-duration: 30s;"></div>
+        <div class="cloud" id="cloud2" style="top: 80px; left: 60%; width: 120px; height: 55px; animation-duration: 35s;"></div>
+        <div class="cloud" id="cloud3" style="top: 30px; left: 85%; width: 90px; height: 45px; animation-duration: 40s;"></div>
+
+        <!-- Background Elements - Buildings -->
+        <div class="building" id="building1" style="width: 100px; height: 180px; animation-delay: 0s;"></div>
+        <div class="building" id="building2" style="width: 80px; height: 140px; animation-delay: 4s;"></div>
+        <div class="building" id="building3" style="width: 110px; height: 200px; animation-delay: 8s;"></div>
+
+        <!-- Subway Elements (hidden initially) -->
+        <div class="subway-light" id="subwayLight1" style="left: 20%; animation-delay: 0s; display: none;"></div>
+        <div class="subway-light" id="subwayLight2" style="left: 50%; animation-delay: 0.7s; display: none;"></div>
+        <div class="subway-light" id="subwayLight3" style="left: 80%; animation-delay: 1.4s; display: none;"></div>
+        
+        <div class="train-window" id="trainWindow1" style="animation-delay: 0s; display: none;"></div>
+        <div class="train-window" id="trainWindow2" style="animation-delay: 1.5s; display: none;"></div>
+
+        <!-- Office Building -->
+        <div class="office-building" id="officeBuilding">
+            <div class="office-sign">ANTHESIS</div>
+            <div class="flag">🚩</div>
+        </div>
+
+        <!-- Ground -->
+        <div id="ground">
+            <div class="road-line" style="animation-delay: 0s;"></div>
+            <div class="road-line" style="animation-delay: 0.4s;"></div>
+            <div class="road-line" style="animation-delay: 0.8s;"></div>
+            <div class="road-line" style="animation-delay: 1.2s;"></div>
+            <div class="road-line" style="animation-delay: 1.6s;"></div>
+        </div>
+
+        <!-- Player -->
+        <div id="player">🚴‍♂️</div>
+    </div>
+
+    <!-- Load JavaScript files -->
+    <script src="audio.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

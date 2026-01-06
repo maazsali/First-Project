@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ammar's DC Commute Adventure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            position: relative;
+            width: 900px;
+            height: 500px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 100%);
+            border: 5px solid #333;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        .game-container.subway {
+            background: linear-gradient(to bottom, #F5F5F5 0%, #E8E8E8 40%, #D3D3D3 100%);
+        }
+
+        .game-info {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 100;
+            background: rgba(255,255,255,0.95);
+            padding: 12px 18px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .lives-display {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 100;
+            background: rgba(255,255,255,0.95);
+            padding: 12px 18px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .timer-display {
+            position: absolute;
+            top: 70px;
+            left: 15px;
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 100;
+            background: rgba(255,255,255,0.95);
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .stage-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            z-index: 200;
+            animation: fadeInOut 2s ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        #ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 140px;
+            background: #7CCD7C;
+            border-top: 4px solid #5A9A5A;
+        }
+
+        #ground.subway {
+            background: #8B8B8B;
+            border-top: 4px solid #696969;
+        }
+
+        .road-line {
+            position: absolute;
+            bottom: 60px;
+            width: 80px;
+            height: 5px;
+            background: white;
+            animation: slideLeft 1s linear infinite;
+        }
+
+        @keyframes slideLeft {
+            0% { left: 100%; }
+            100% { left: -80px; }
+        }
+
+        .subway-light {
+            position: absolute;
+            top: 20px;
+            width: 60px;
+            height: 30px;
+            background: #FFD700;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            animation: subwayLights 2s linear infinite;
+        }
+
+        @keyframes subwayLights {
+            0% { left: 100%; }
+            100% { left: -60px; }
+        }
+
+        .train-window {
+            position: absolute;
+            top: 80px;
+            width: 80px;
+            height: 100px;
+            background: #4A4A4A;
+            border: 4px solid #2C2C2C;
+            border-radius: 8px;
+            animation: trainWindows 3s linear infinite;
+        }
+
+        @keyframes trainWindows {
+            0% { left: 100%; }
+            100% { left: -80px; }
+        }
+
+        #player {
+            position: absolute;
+            bottom: 140px;
+            left: 120px;
+            font-size: 50px;
+            transition: bottom 0.3s ease;
+            z-index: 50;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+            transform: scaleX(-1);
+        }
+
+        #player.glowing {
+            animation: glow 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            0% { filter: drop-shadow(0 0 5px #FFD700) drop-shadow(0 0 10px #FFA500); }
+            100% { filter: drop-shadow(0 0 15px #FFD700) drop-shadow(0 0 25px #FFA500); }
+        }
+
+        .obstacle {
+            position: absolute;
+            bottom: 140px;
+            right: -60px;
+            font-size: 40px;
+            animation: moveObstacle 3s linear;
+            z-index: 40;
+        }
+
+        @keyframes moveObstacle {
+            0% { right: -60px; }
+            100% { right: 100%; }
+        }
+
+        .collectible {
+            position: absolute;
+            bottom: 200px;
+            right: -50px;
+            font-size: 35px;
+            animation: moveCollectible 3s linear;
+            z-index: 40;
+        }
+
+        .collectible.moon {
+            animation: moveCollectible 3s linear, spin 2s linear infinite;
+        }
+
+        @keyframes moveCollectible {
+            0% { right: -50px; }
+            100% { right: 100%; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: moveCloud linear infinite;
+        }
+
+        @keyframes moveCloud {
+            0% { left: 100%; }
+            100% { left: -200px; }
+        }
+
+        .building {
+            position: absolute;
+            bottom: 140px;
+            background: #6B7280;
+            border: 3px solid #4B5563;
+            animation: moveBuilding 10s linear infinite;
+        }
+
+        @keyframes moveBuilding {
+            0% { right: -150px; }
+            100% { right: 100%; }
+        }
+
+        .office-building {
+            position: absolute;
+            bottom: 140px;
+            right: 100px;
+            width: 200px;
+            height: 250px;
+            background: linear-gradient(to bottom, #4B5563 0%, #374151 100%);
+            border: 4px solid #1F2937;
+            display: none;
+            z-index: 30;
+        }
+
+        .office-building.show {
+            display: block;
+        }
+
+        .office-sign {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            color: #1F2937;
+            padding: 15px 25px;
+            font-size: 32px;
+            font-weight: bold;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .flag {
+            position: absolute;
+            top: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 60px;
+            opacity: 0;
+            transition: all 1s ease;
+        }
+
+        .flag.raised {
+            opacity: 1;
+            top: -100px;
+        }
+
+        .start-screen, .game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 1000;
+        }
+
+        .start-screen h1, .game-over-screen h1 {
+            font-size: 52px;
+            margin-bottom: 25px;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.6);
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .start-screen p, .game-over-screen p {
+            font-size: 22px;
+            margin-bottom: 20px;
+            text-align: center;
+            max-width: 700px;
+            line-height: 1.8;
+        }
+
+        .stats {
+            background: rgba(255,255,255,0.1);
+            padding: 20px 40px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .stats div {
+            font-size: 24px;
+            margin: 8px 0;
+        }
+
+        button {
+            padding: 18px 45px;
+            font-size: 26px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .instructions {
+            font-size: 18px;
+            color: #D1D5DB;
+            margin-top: 15px;
+        }
+
+        .overtime-banner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            font-weight: bold;
+            color: #FF0000;
+            text-shadow: 0 0 20px #FF0000, 0 0 40px #FF0000;
+            z-index: 300;
+            animation: pulse 1s ease-in-out 3;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container" id="gameContainer">
+        <div class="game-info">
+            <div>🌙 Moons: <span id="moons">0</span></div>
+            <div>☕ Coffee: <span id="coffee">0</span></div>
+            <div>💻 Laptops: <span id="laptops">0</span></div>
+        </div>
+        <div class="lives-display">
+            <div>❤️ Lives: <span id="lives">0</span></div>
+        </div>
+        <div class="timer-display">
+            <div>⏱️ Time: <span id="timer">0</span>s</div>
+        </div>
+
+        <!-- Start Screen -->
+        <div class="start-screen" id="startScreen">
+            <h1>🚴‍♂️ Ammar's DC Commute 🚴‍♂️</h1>
+            <p>Congratulations on your new job at Anthesis!<br>Help Ammar bike through DC to reach the office.</p>
+            <p>Collect 🌙 crescent moons, ☕ coffee, and 💻 laptops!<br>Find 👰 Jasmine for extra lives!</p>
+            <button onclick="startGame()">Start the Commute!</button>
+            <p class="instructions">Press SPACEBAR or CLICK to jump over obstacles</p>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div class="game-over-screen hidden" id="gameOverScreen">
+            <h1 id="endTitle">🎯 Mission Complete!</h1>
+            <div class="stats">
+                <div>🌙 Moons Collected: <span id="finalMoons">0</span></div>
+                <div>☕ Coffee: <span id="finalCoffee">0</span></div>
+                <div>💻 Laptops: <span id="finalLaptops">0</span></div>
+                <div>⏱️ Time Survived: <span id="finalTime">0</span>s</div>
+            </div>
+            <p id="endMessage">Great commute, Ammar!</p>
+            <button onclick="restartGame()">Ride Again</button>
+        </div>
+
+        <!-- Clouds -->
+        <div class="cloud" id="cloud1" style="top: 40px; left: 20%; width: 100px; height: 50px; animation-duration: 30s;"></div>
+        <div class="cloud" id="cloud2" style="top: 80px; left: 60%; width: 120px; height: 55px; animation-duration: 35s;"></div>
+        <div class="cloud" id="cloud3" style="top: 30px; left: 85%; width: 90px; height: 45px; animation-duration: 40s;"></div>
+
+        <!-- Buildings -->
+        <div class="building" id="building1" style="width: 100px; height: 180px; animation-delay: 0s;"></div>
+        <div class="building" id="building2" style="width: 80px; height: 140px; animation-delay: 4s;"></div>
+        <div class="building" id="building3" style="width: 110px; height: 200px; animation-delay: 8s;"></div>
+
+        <!-- Subway elements (hidden initially) -->
+        <div class="subway-light" id="subwayLight1" style="left: 20%; animation-delay: 0s; display: none;"></div>
+        <div class="subway-light" id="subwayLight2" style="left: 50%; animation-delay: 0.7s; display: none;"></div>
+        <div class="subway-light" id="subwayLight3" style="left: 80%; animation-delay: 1.4s; display: none;"></div>
+        
+        <div class="train-window" id="trainWindow1" style="animation-delay: 0s; display: none;"></div>
+        <div class="train-window" id="trainWindow2" style="animation-delay: 1.5s; display: none;"></div>
+
+        <!-- Office Building -->
+        <div class="office-building" id="officeBuilding">
+            <div class="office-sign">ANTHESIS</div>
+            <div class="flag">🚩</div>
+        </div>
+
+        <!-- Ground -->
+        <div id="ground">
+            <div class="road-line" style="animation-delay: 0s;"></div>
+            <div class="road-line" style="animation-delay: 0.4s;"></div>
+            <div class="road-line" style="animation-delay: 0.8s;"></div>
+            <div class="road-line" style="animation-delay: 1.2s;"></div>
+            <div class="road-line" style="animation-delay: 1.6s;"></div>
+        </div>
+
+        <!-- Player -->
+        <div id="player">🚴‍♂️</div>
+    </div>
+
+    <script>
+        // Audio Context for sound effects
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(frequency, duration, type = 'sine', volume = 0.3) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+            gainNode.gain.value = volume;
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function playJumpSound() {
+            playSound(400, 0.1, 'square', 0.2);
+        }
+
+        function playCollectSound() {
+            playSound(800, 0.1, 'sine', 0.25);
+            setTimeout(() => playSound(1000, 0.1, 'sine', 0.25), 50);
+        }
+
+        function playCoffeeSound() {
+            playSound(600, 0.15, 'triangle', 0.25);
+        }
+
+        function playLaptopSound() {
+            playSound(1200, 0.2, 'sawtooth', 0.2);
+            setTimeout(() => playSound(1400, 0.15, 'sawtooth', 0.2), 100);
+        }
+
+        function playJasmineSound() {
+            playSound(1000, 0.15, 'sine', 0.3);
+            setTimeout(() => playSound(1200, 0.15, 'sine', 0.3), 100);
+            setTimeout(() => playSound(1400, 0.2, 'sine', 0.3), 200);
+        }
+
+        function playCrashSound() {
+            playSound(100, 0.3, 'sawtooth', 0.3);
+        }
+
+        function playVictorySound() {
+            playSound(523, 0.2, 'sine', 0.25);
+            setTimeout(() => playSound(659, 0.2, 'sine', 0.25), 200);
+            setTimeout(() => playSound(784, 0.3, 'sine', 0.25), 400);
+        }
+
+        function playOvertimeSound() {
+            playSound(300, 0.2, 'square', 0.3);
+            setTimeout(() => playSound(250, 0.2, 'square', 0.3), 200);
+            setTimeout(() => playSound(200, 0.3, 'square', 0.3), 400);
+        }
+
+        // Game variables
+        const player = document.getElementById('player');
+        const gameContainer = document.getElementById('gameContainer');
+        const ground = document.getElementById('ground');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const officeBuilding = document.getElementById('officeBuilding');
+
+        let isJumping = false;
+        let gameRunning = false;
+        let lives = 0;
+        let moons = 0;
+        let coffeeCount = 0;
+        let laptopCount = 0;
+        let gameTime = 0;
+        let currentStage = 1; // 1 = street, 2 = subway, 3 = street
+        let reachedOffice = false;
+        let jumpsAtOffice = 0;
+        let overtimeMode = false;
+        let obstacleSpeed = 3000;
+        let spawnRate = 2000;
+
+        let obstacleInterval;
+        let collectibleInterval;
+        let timerInterval;
+        let powerUpActive = false;
+        let invulnerable = false;
+
+        // Track Jasmine spawns
+        let jasmineSpawned = {
+            stage1: false,
+            stage2: false,
+            stage3: false
+        };
+
+        // Update displays
+        function updateDisplay() {
+            document.getElementById('moons').textContent = moons;
+            document.getElementById('coffee').textContent = coffeeCount;
+            document.getElementById('laptops').textContent = laptopCount;
+            document.getElementById('lives').textContent = lives;
+            document.getElementById('timer').textContent = gameTime;
+        }
+
+        // Jump function
+        function jump() {
+            if (!gameRunning) return;
+
+            if (reachedOffice && !overtimeMode) {
+                jumpsAtOffice++;
+                if (jumpsAtOffice >= 2) {
+                    startOvertimeMode();
+                }
+                return;
+            }
+
+            if (isJumping) return;
+            
+            isJumping = true;
+            playJumpSound();
+            player.style.bottom = '280px';
+            
+            setTimeout(() => {
+                player.style.bottom = '140px';
+                isJumping = false;
+            }, 600);
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                jump();
+            }
+        });
+
+        gameContainer.addEventListener('click', () => {
+            if (gameRunning || reachedOffice) {
+                jump();
+            }
+        });
+
+        // Change stage
+        function changeStage(stage) {
+            currentStage = stage;
+            const clouds = [document.getElementById('cloud1'), document.getElementById('cloud2'), document.getElementById('cloud3')];
+            const buildings = [document.getElementById('building1'), document.getElementById('building2'), document.getElementById('building3')];
+            const subwayLights = [document.getElementById('subwayLight1'), document.getElementById('subwayLight2'), document.getElementById('subwayLight3')];
+            const trainWindows = [document.getElementById('trainWindow1'), document.getElementById('trainWindow2')];
+
+            if (stage === 2) {
+                // Subway stage
+                gameContainer.classList.add('subway');
+                ground.classList.add('subway');
+                clouds.forEach(cloud => cloud.style.display = 'none');
+                buildings.forEach(building => building.style.display = 'none');
+                subwayLights.forEach(light => light.style.display = 'block');
+                trainWindows.forEach(window => window.style.display = 'block');
+                showStageIndicator('🚇 ENTERING SUBWAY');
+            } else {
+                // Street stages
+                gameContainer.classList.remove('subway');
+                ground.classList.remove('subway');
+                clouds.forEach(cloud => cloud.style.display = 'block');
+                buildings.forEach(building => building.style.display = 'block');
+                subwayLights.forEach(light => light.style.display = 'none');
+                trainWindows.forEach(window => window.style.display = 'none');
+                if (stage === 3) {
+                    showStageIndicator('🌇 BACK TO STREETS');
+                }
+            }
+        }
+
+        function showStageIndicator(text) {
+            const indicator = document.createElement('div');
+            indicator.className = 'stage-indicator';
+            indicator.textContent = text;
+            gameContainer.appendChild(indicator);
+            setTimeout(() => indicator.remove(), 2000);
+        }
+
+        // Reach office
+        function reachOffice() {
+            reachedOffice = true;
+            gameRunning = false;
+            clearInterval(obstacleInterval);
+            clearInterval(collectibleInterval);
+            
+            officeBuilding.classList.add('show');
+            setTimeout(() => {
+                document.querySelector('.flag').classList.add('raised');
+                playVictorySound();
+            }, 500);
+
+            setTimeout(() => {
+                showStageIndicator('Press JUMP twice for OVERTIME MODE!');
+            }, 1500);
+        }
+
+        // Overtime mode
+        function startOvertimeMode() {
+            overtimeMode = true;
+            gameRunning = true;
+            reachedOffice = false;
+            jumpsAtOffice = 0;
+            officeBuilding.classList.remove('show');
+            
+            const banner = document.createElement('div');
+            banner.className = 'overtime-banner';
+            banner.textContent = 'OVERTIME!';
+            gameContainer.appendChild(banner);
+            playOvertimeSound();
+            
+            setTimeout(() => banner.remove(), 3000);
+
+            obstacleSpeed = 2000;
+            spawnRate = 1500;
+            startSpawning();
+
+            // Gradually increase difficulty
+            const difficultyInterval = setInterval(() => {
+                if (!gameRunning) {
+                    clearInterval(difficultyInterval);
+                    return;
+                }
+                obstacleSpeed = Math.max(800, obstacleSpeed - 100);
+                spawnRate = Math.max(800, spawnRate - 100);
+                clearInterval(obstacleInterval);
+                clearInterval(collectibleInterval);
+                startSpawning();
+            }, 5000);
+        }
+
+        // Spawn obstacles
+        function spawnObstacle() {
+            if (!gameRunning) return;
+
+            const obstacle = document.createElement('div');
+            obstacle.className = 'obstacle';
+            obstacle.setAttribute('data-obstacle', 'true');
+            
+            const obstacles = ['🚧', '🛑', '⚠️', '🚨'];
+            obstacle.textContent = obstacles[Math.floor(Math.random() * obstacles.length)];
+            obstacle.style.animationDuration = (obstacleSpeed / 1000) + 's';
+            
+            gameContainer.appendChild(obstacle);
+
+            const checkCollision = setInterval(() => {
+                if ((!gameRunning && !overtimeMode) || !obstacle.parentElement) {
+                    clearInterval(checkCollision);
+                    return;
+                }
+
+                const playerRect = player.getBoundingClientRect();
+                const obstacleRect = obstacle.getBoundingClientRect();
+
+                // More precise collision detection
+                const buffer = 10; // pixels of forgiveness
+                if (
+                    playerRect.left + buffer < obstacleRect.right &&
+                    playerRect.right - buffer > obstacleRect.left &&
+                    playerRect.bottom - buffer > obstacleRect.top &&
+                    playerRect.top + buffer < obstacleRect.bottom
+                ) {
+                    if (!invulnerable) {
+                        hitObstacle();
+                    }
+                    clearInterval(checkCollision);
+                    obstacle.remove();
+                }
+
+                if (obstacleRect.right < -100) {
+                    clearInterval(checkCollision);
+                    obstacle.remove();
+                }
+            }, 10);
+        }
+
+        // Spawn collectibles
+        function spawnCollectible() {
+            if (!gameRunning) return;
+
+            const collectible = document.createElement('div');
+            collectible.className = 'collectible';
+            collectible.setAttribute('data-collectible', 'true');
+            
+            const rand = Math.random();
+            let type;
+
+            // Check if we should spawn Jasmine for this stage
+            const shouldSpawnJasmine = 
+                (currentStage === 1 && !jasmineSpawned.stage1 && rand < 0.15) ||
+                (currentStage === 2 && !jasmineSpawned.stage2 && rand < 0.15) ||
+                (currentStage === 3 && !jasmineSpawned.stage3 && rand < 0.15);
+
+            if (shouldSpawnJasmine) {
+                type = 'jasmine';
+                collectible.textContent = '👰';
+                if (currentStage === 1) jasmineSpawned.stage1 = true;
+                if (currentStage === 2) jasmineSpawned.stage2 = true;
+                if (currentStage === 3) jasmineSpawned.stage3 = true;
+            } else if (rand < 0.5) {
+                type = 'moon';
+                collectible.textContent = '🌙';
+                collectible.classList.add('moon');
+            } else if (rand < 0.75) {
+                type = 'coffee';
+                collectible.textContent = '☕';
+            } else {
+                type = 'laptop';
+                collectible.textContent = '💻';
+            }
+
+            collectible.dataset.type = type;
+            collectible.style.animationDuration = (obstacleSpeed / 1000) + 's';
+            collectible.style.bottom = (Math.random() * 100 + 180) + 'px';
+            
+            gameContainer.appendChild(collectible);
+
+            const checkCollection = setInterval(() => {
+                if ((!gameRunning && !overtimeMode) || !collectible.parentElement) {
+                    clearInterval(checkCollection);
+                    return;
+                }
+
+                const playerRect = player.getBoundingClientRect();
+                const collectibleRect = collectible.getBoundingClientRect();
+
+                if (
+                    playerRect.left < collectibleRect.right &&
+                    playerRect.right > collectibleRect.left &&
+                    playerRect.bottom > collectibleRect.top &&
+                    playerRect.top < collectibleRect.bottom
+                ) {
+                    collectItem(type);
+                    clearInterval(checkCollection);
+                    collectible.remove();
+                }
+
+                if (collectibleRect.right < -100) {
+                    clearInterval(checkCollection);
+                    collectible.remove();
+                }
+            }, 10);
+        }
+
+        // Collect item
+        function collectItem(type) {
+            if (type === 'moon') {
+                moons++;
+                playCollectSound();
+            } else if (type === 'coffee') {
+                coffeeCount++;
+                playCoffeeSound();
+                activatePowerUp();
+            } else if (type === 'laptop') {
+                laptopCount++;
+                playLaptopSound();
+                activatePowerUp();
+                player.classList.add('glowing');
+                setTimeout(() => player.classList.remove('glowing'), 3000);
+            } else if (type === 'jasmine') {
+                lives++;
+                playJasmineSound();
+            }
+            updateDisplay();
+        }
+
+        // Power up
+        function activatePowerUp() {
+            if (powerUpActive) return;
+            powerUpActive = true;
+            
+            const originalSpeed = obstacleSpeed;
+            obstacleSpeed = obstacleSpeed * 0.6;
+            
+            setTimeout(() => {
+                obstacleSpeed = originalSpeed;
+                powerUpActive = false;
+            }, 3000);
+        }
+
+        // Hit obstacle
+        function hitObstacle() {
+            playCrashSound();
+            
+            if (lives > 0) {
+                lives--;
+                updateDisplay();
+                invulnerable = true;
+                player.style.opacity = '0.5';
+                
+                setTimeout(() => {
+                    invulnerable = false;
+                    player.style.opacity = '1';
+                }, 1500);
+            } else {
+                endGame(overtimeMode);
+            }
+        }
+
+        // Start spawning
+        function startSpawning() {
+            obstacleInterval = setInterval(spawnObstacle, spawnRate);
+            collectibleInterval = setInterval(spawnCollectible, spawnRate + 500);
+        }
+
+        // Start game
+        function startGame() {
+            startScreen.classList.add('hidden');
+            gameRunning = true;
+            lives = 0;
+            moons = 0;
+            coffeeCount = 0;
+            laptopCount = 0;
+            gameTime = 0;
+            currentStage = 1;
+            reachedOffice = false;
+            jumpsAtOffice = 0;
+            overtimeMode = false;
+            obstacleSpeed = 3000;
+            spawnRate = 2000;
+            invulnerable = false;
+            
+            jasmineSpawned = {
+                stage1: false,
+                stage2: false,
+                stage3: false
+            };
+
+            updateDisplay();
+            changeStage(1);
+            startSpawning();
+
+            // Timer
+            timerInterval = setInterval(() => {
+                gameTime++;
+                updateDisplay();
+
+                // Stage transitions
+                if (gameTime === 30 && currentStage === 1) {
+                    changeStage(2);
+                } else if (gameTime === 60 && currentStage === 2) {
+                    changeStage(3);
+                } else if (gameTime === 90 && !reachedOffice) {
+                    clearInterval(timerInterval);
+                    reachOffice();
+                }
+            }, 1000);
+        }
+
+        // End game
+        function endGame(wasOvertime) {
+            gameRunning = false;
+            overtimeMode = false;
+            clearInterval(obstacleInterval);
+            clearInterval(collectibleInterval);
+            clearInterval(timerInterval);
+
+            document.getElementById('finalMoons').textContent = moons;
+            document.getElementById('finalCoffee').textContent = coffeeCount;
+            document.getElementById('finalLaptops').textContent = laptopCount;
+            document.getElementById('finalTime').textContent = gameTime;
+
+            if (wasOvertime) {
+                document.getElementById('endTitle').textContent = '💥 Overtime Ended!';
+                document.getElementById('endMessage').textContent = 'Amazing effort in overtime, Ammar!';
+            } else {
+                document.getElementById('endTitle').textContent = '🎯 Mission Complete!';
+                document.getElementById('endMessage').textContent = 'Congratulations on reaching Anthesis!';
+            }
+
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        // Restart game
+        function restartGame() {
+            gameOverScreen.classList.add('hidden');
+            officeBuilding.classList.remove('show');
+            document.querySelector('.flag').classList.remove('raised');
+            
+            // Remove any existing obstacles and collectibles
+            document.querySelectorAll('.obstacle, .collectible').forEach(el => el.remove());
+            
+            startGame();
+        }
+    </script>
+</body>
+</html>
